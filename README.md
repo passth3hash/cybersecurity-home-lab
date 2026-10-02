@@ -78,13 +78,26 @@ Once the setup was complete, I disabled NAT on Ubuntu and kept only the Host-Onl
 
 ## Technologies 
 
-- Windows
-- Kali Linux
-- Oracle VirtualBox 
-- Ubuntu Server
-- Docker 
-- Owasp Juice Shop 
-- VirtualBox Host-Only Networking 
+- Windows - Host operating system
+- Kali Linux - Attacker and security testing environment
+- Oracle VirtualBox - Virtualization platform 
+- Ubuntu Server - Target server environment
+- Docker - Container platform
+- Owasp Juice Shop - Vulnerable web application
+- VirtualBox Host-Only Networking - Isolated lab network
+
+## Methodology 
+
+The lab follows a structured approach to building, verifying and testing an isolated security environment. 
+
+1. Lab setup - Create and configure Kali Linux and Ubuntu Server virtual machines using Oracle VirtualBox
+2. Network isolation - Configure a Host-Only network to isolate the security testing environment from the home network
+3. Target deployment - Install Docker on Ubuntu Server and deploy OWASP Juice Shop as the vulnerable target application
+4. Environment verification - Verify network connectivity between Kali and Ubuntu and confirm that the target environment does not have direct internet access
+5. Reconnaissance - Identify exposed services and gather information about the target
+6. Web application testing - Perform controlled security testing against OWASP Juice Shop
+7. Documentation - Record findings, evidence, potential impact and recommended remediation
+
 
   
     
