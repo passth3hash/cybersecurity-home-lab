@@ -48,7 +48,7 @@ The objective is to develop practical skills in:
 
 This lab is built on a Windows hosting Oracle VirtualBox to create an isolated virtual environment for cybersecurity testing. 
 
-The environment consists of two virtual machines: Kali Linux, which servers as the attacker machine and Ubuntu Server, which serves as the target system. Both virtual machines communicate through a dedicated VirtualBox Host-Only Network, keeping the testing environment separate from the physical home network.
+The environment consists of two virtual machines: Kali Linux, which serves as the attacker machine and Ubuntu Server, which serves as the target system. Both virtual machines communicate through a dedicated VirtualBox Host-Only Network, keeping the testing environment separate from the physical home network.
 
 Ubuntu Server hosts Docker, which runs the intentionally vulnerable OWASP Juice Shop web application. 
 
@@ -83,20 +83,20 @@ Once the setup was complete, I disabled NAT on Ubuntu and kept only the Host-Onl
 - Oracle VirtualBox - Virtualization platform 
 - Ubuntu Server - Target server environment
 - Docker - Container platform
-- Owasp Juice Shop - Vulnerable web application
+- OWASP Juice Shop - Vulnerable web application
 - VirtualBox Host-Only Networking - Isolated lab network
 
 ## Methodology 
 
 The lab follows a structured approach to building, verifying and testing an isolated security environment. 
 
-1. Lab setup - Create and configure Kali Linux and Ubuntu Server virtual machines using Oracle VirtualBox
-2. Network isolation - Configure a Host-Only network to isolate the security testing environment from the home network
-3. Target deployment - Install Docker on Ubuntu Server and deploy OWASP Juice Shop as the vulnerable target application
-4. Environment verification - Verify network connectivity between Kali and Ubuntu and confirm that the target environment does not have direct internet access
-5. Reconnaissance - Identify exposed services and gather information about the target
-6. Web application testing - Perform controlled security testing against OWASP Juice Shop
-7. Documentation - Record findings, evidence, potential impact and recommended remediation
+- Lab setup - Create and configure Kali Linux and Ubuntu Server virtual machines using Oracle VirtualBox
+- Network isolation - Configure a Host-Only network to isolate the security testing environment from the home network
+- Target deployment - Install Docker on Ubuntu Server and deploy OWASP Juice Shop as the vulnerable target application
+- Environment verification - Verify network connectivity between Kali and Ubuntu and confirm that the target environment does not have direct internet access
+- Reconnaissance - Identify exposed services and gather information about the target
+- Web application testing - Perform controlled security testing against OWASP Juice Shop
+- Documentation - Record findings, evidence, potential impact and recommended remediation
 
 
   
