@@ -56,13 +56,13 @@ This architecture provides a controlled environment where reconnaissance and web
 
 ### Network Design 
 
-During the initial Ubuntu Server setup, I learned that a NAT adapter can temporarily provide a virtual machine with Internet connectivity through the host system. I used NAT for system updates, Docker installation, and downloading the OWASP Juice Shop image.
+During the initial Ubuntu Server setup, I learned that a NAT adapter can temporarily provide a virtual machine with internet connectivity through the host system. I used NAT for system updates, Docker installation, and downloading the OWASP Juice Shop image.
 
 Once the setup was complete, I disabled NAT on Ubuntu and kept only the Host-Only adapter enabled for security testing.
 
 1. **NAT - Let this VM get out**
    
-- The VM can access the Internet through the Windows host's network connection.
+- The VM can access the internet through the Windows host's network connection.
 - I used NAT on Ubuntu to download system updates, install Docker, and download the Juice Shop image.
 
 2. **Host-Only - Let these lab machines talk to each other**
@@ -73,7 +73,7 @@ Once the setup was complete, I disabled NAT on Ubuntu and kept only the Host-Onl
 
 3. **Network Verification**
    
-- After disabling NAT, I used `ip route` on Ubuntu to verify that there was no default route to the Internet, so Ubuntu could not reach hosts outside the           isolated lab network.
+- After disabling NAT, I used `ip route` on Ubuntu to verify that there was no default route to the internet, so Ubuntu could not reach hosts outside the           isolated lab network.
 - From Kali, I used `curl` to access Juice Shop on Ubuntu, confirming that the application remained reachable through the Host-Only network.
 
 ## Technologies 
