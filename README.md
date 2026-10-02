@@ -65,13 +65,13 @@ Once the setup was complete, I disabled NAT on Ubuntu and kept only the Host-Onl
 - The VM can access the Internet through the Windows host's network connection.
 - I used NAT on Ubuntu to download system updates, install Docker, and download the Juice Shop image.
 
-3. **Host-Only - Let these lab machines talk to each other**
+2. **Host-Only - Let these lab machines talk to each other**
    
 - The VM can communicate with the Windows host and other VMs on the Host-Only network.
 - Host-Only networking does not provide Internet access by itself.
 - In my lab, Kali can communicate with Ubuntu and Juice Shop, while Ubuntu has no default route to the Internet.
 
-5. **Network Verification**
+3. **Network Verification**
    
 - After disabling NAT, I used `ip route` on Ubuntu to verify that there was no default route to the Internet, so Ubuntu could not reach hosts outside the           isolated lab network.
 - From Kali, I used `curl` to access Juice Shop on Ubuntu, confirming that the application remained reachable through the Host-Only network.
