@@ -45,15 +45,6 @@ A SQL injection payload was submitted in the email field while using a random pa
   "password": "test"
 }
 
-The application returned HTTP/1.1 200 OK and issued an authenticated JWT. The application source code confirmed the vulnerable query construction: 
-
-models.sequelize.query(
-  `SELECT * FROM Users WHERE email = '${req.body.email || ''}' AND password = '${security.hash(req.body.password || '')}' AND deletedAt IS NULL`,
-  { model: UserModel, plain: true }
-)
-
-The user-controlled input (email) is concatenated directly into the SQL query string instead of being safely parameterized. 
-
 ### Impact 
 
 An unauthenticated user can manipulate the login query and bypass the authentication. 
@@ -62,7 +53,8 @@ The successful exploitation resulted in authentication as an administrative user
 ### Result 
 
 **Confirmed - exploitable SQL injection with authentication bypass** 
-This was independently validated against the running OWASP Juice Shop and was not based solely on source-code inspection
+
+The successful authentication bypass demonstrated that user-controlled input was being interpreted as part of the backend SQL query. No source-code analysis was required to establish exploitability.
 
 
 Each finding follows: 
