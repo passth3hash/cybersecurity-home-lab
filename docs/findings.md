@@ -41,7 +41,7 @@ The login endpoint may be vulnerable to SQL injection because the supplied email
 A SQL injection payload was submitted in the email field while using a random password: 
 
 {
-  "email": "basil@juice-shop.op' OR '1'='1' --",
+  "email": "' OR 1=1 --",
   "password": "test"
 }
 
