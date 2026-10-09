@@ -17,13 +17,9 @@ Broken access control occurs when an application fails to enforce authorization 
 ### Finding 01 - Insecure Direct Object Reference (IDOR) - Basket access 
 
 **Severity:** High 
-
 **Category:** Broken Access Control 
-
 **Affected component:** Shopping basket 
-
 **Affected endpoint:** GET /rest/basket/{id} 
-
 **Testing approach:** Black-box 
 
 #### Observation 
