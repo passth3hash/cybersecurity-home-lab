@@ -60,14 +60,19 @@ The initial request demonstrates a normal, authorized action where User 25 reque
   
 </details>
 
+The follow-up request shows the exploit. Keeping the exact same login session, the request parameter was changed to target Basket ID 1 (GET /rest/basket/1)
 
+<details>
+<summary> <b>Click to view baseline screenshot</b></summary>
+
+<img width="938" height="544" alt="IDOR1" src="https://github.com/user-attachments/assets/8473ca29-9947-4a26-8119-170bb00fa852" />
 
 
 
 #### Remediation 
 
-- Verify on the server that the requested basket belongs to the authenticated user.
-- Apply authorization checks consistently to basket retrieval, modification and checkout operations. 
+- Never rely on user-supplied IDs in the URL to fetch sensitive data. Instead, the server should read the user's secure login token (session/JWT) to determine      which basket belongs to them.
+- Ensure that the same ownership verification logic is applied to all basket operations, including viewing, adding items, modifying quantities, and checking out.
 
 
 
