@@ -15,19 +15,16 @@ For testing I have used the following methodology:
 Broken access control occurs when an application fails to enforce authorization correctly, allowing users to access resources or perform beyond their intended permissions.
 
 ### Finding 01 - Insecure Direct Object Reference (IDOR) - Basket access 
-
-**Severity:** High 
-**Category:** Broken Access Control 
-**Affected component:** Shopping basket 
-**Affected endpoint:** GET /rest/basket/{id} 
-**Testing approach:** Black-box 
+* **Severity:** High 
+* **Category:** Broken Access Control 
+* **Affected component:** Shopping basket 
+* **Affected endpoint:** GET /rest/basket/{id} 
+* **Testing approach:** Black-box 
 
 #### Observation 
-
 While testing the shopping basket feature, I noticed that the basket's unique ID number was visible directly in the URL when the application requested basket information.
 
 #### Hypothesis 
-
 I suspected that the application was trusting the ID number provided in the URL blindly, without verifying if the basket actually belonged to the logged-in user.
 
 #### Validation 
@@ -78,10 +75,10 @@ The follow-up request shows the exploit. Keeping the exact same login session, t
 
 ### Finding 02 - Mass Data Exposure in Complaints endpoint
 
-**Severity:** Medium 
-**Category:** Broken Access Control  
-**Affected endpoint:** GET /api/Complaints 
-**Testing approach:** Black-box 
+* **Severity:** Medium 
+* **Category:** Broken Access Control  
+* **Affected endpoint:** GET /api/Complaints 
+* **Testing approach:** Black-box 
 
 #### Observation 
 
