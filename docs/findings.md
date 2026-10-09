@@ -53,7 +53,15 @@ The issue was validated through black-box testing against the application.
 
 The initial request demonstrates a normal, authorized action where User 25 requests their own basket data (Basket ID 6) 
 
-<img width="1277" height="770" alt="IDOR" src="https://github.com/user-attachments/assets/69260bd6-59a2-45ff-a38d-0788c50ee6dc" />
+<details>
+<summary> <b>Click to view baseline screenshot</b></summary>
+
+<img width="942" height="546" alt="IDOR" src="https://github.com/user-attachments/assets/b98a800c-fb01-4547-b06b-38a9f2814d33" />
+  
+</details>
+
+
+
 
 
 #### Remediation 
