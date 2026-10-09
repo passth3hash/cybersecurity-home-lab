@@ -10,7 +10,7 @@ For testing I have used the following methodology:
 
 
 
-## 1 - Broken Access Control 
+## 1 — Broken Access Control 
 
 Broken access control occurs when an application fails to enforce authorization correctly, allowing users to access resources or perform beyond their intended permissions.
 
