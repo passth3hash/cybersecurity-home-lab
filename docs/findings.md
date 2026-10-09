@@ -2,66 +2,64 @@
 
 Contains security findings identified and validated during testing of the isolated OWASP Juice Shop home lab.
 
+Testing primarily followed a black-box approach, using application responses to investigate and validate suspected vulnerabilities. Source code analysis was used selectively where it provided additional context.
+
 For testing I have used the following methodology: 
 
 **Observation → Hypotheses → Validation → Impact → Result → Evidence**
 
 
 
-## Finding 01 - SQL Injection Authentication Bypass
+## 1 - Broken Access Control 
 
-**Severity: Critical**
-**Category: Injection/SQL Injection**
-**Affected endpoint: POST /rest/user/login**
+Broken access control occurs when an application fails to enforce authorization correctly, allowing users to access resources or perform beyond their intended permissions.
 
-### Observation 
+### Finding 01 - Insecure Direct Object Reference (IDOR) - Basket access 
 
-Normal authentication requests rejected an invalid password:
+**Severity:** High 
+**Category:** Broken Access Control 
+**Affected component:** Shopping basket 
+**Affected endpoint:** GET /rest/basket/{id} 
+**Testing approach:** Black-box 
 
-POST /rest/user/login
-Content-Type: application/json
+#### Observation 
 
-{
-  "email": "basil@juice-shop.op",
-  "password": "admin"
-}
+While testing the shopping basket feature, I noticed that the basket's unique ID number was visible directly in the URL when the application requested basket information.
 
-The application returned: 
+#### Hypothesis 
 
-HTTP/1.1 401 Unauthorized
+I suspected that the application was trusting the ID number provided in the URL blindly, without verifying if the basket actually belonged to the logged-in user.
 
-A single quote added to the email parameter caused the application to return an HTTP 500 reponse containing a SQLite error. This indicated that user-controlled input was reaching a SQL query without proper parameterization. 
+#### Validation 
 
-### Hypothesis 
+To test this, I logged in as a regular user **(User ID 25, assigned to Basket ID 6)** and captured the traffic in Burp. I then performed the following tests using the exact same login session:
 
-The login endpoint may be vulnerable to SQL injection because the supplied email value appears to be concatenated into the authentication query. 
+- GET /rest/basket/6 successfuly returned my own basket data.
+- GET /rest/basket/1 **successfuly returned the basket data belonging to User ID 1**
 
-### Validation 
+The application did not require a change of user accounts or a different authorization token to view User 1's data.
 
-A SQL injection payload was submitted in the email field while using a random password: 
+#### Impact 
 
-{
-  "email": "' OR 1=1 --",
-  "password": "test"
-}
+Any logged-in user can access the shopping activity and product selections of any customer simply by guessing or cycling through basket ID numbers. In a real world e-commerce application, exposing a customer's intent to buy violates data privacy regulations and damages customer trust. 
 
-### Impact 
+#### Result 
 
-An unauthenticated user can manipulate the login query and bypass the authentication. 
-The successful exploitation resulted in authentication as an administrative user without knowing the legitimate password. 
+**Confirmed - unauthorized cross-user basket access.**
 
-### Result 
+The issue was validated through black-box testing against the application. 
 
-**Confirmed - exploitable SQL injection with authentication bypass** 
+#### Evidence 
 
-The successful authentication bypass demonstrated that user-controlled input was being interpreted as part of the backend SQL query. No source-code analysis was required to establish exploitability.
+The initial request demonstrates a normal, authorized action where User 25 requests their own basket data (Basket ID 6) 
+
+<img width="1277" height="770" alt="IDOR" src="https://github.com/user-attachments/assets/69260bd6-59a2-45ff-a38d-0788c50ee6dc" />
 
 
-Each finding follows: 
+#### Remediation 
 
-- Observation
-- Hypothesis
-- Validation
-- Impact
-- Evidence
-- Remediation
+- Verify on the server that the requested basket belongs to the authenticated user.
+- Apply authorization checks consistently to basket retrieval, modification and checkout operations. 
+
+
+
