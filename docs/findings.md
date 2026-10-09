@@ -67,7 +67,7 @@ The follow-up request shows the exploit. Keeping the exact same login session, t
 
 <img width="938" height="544" alt="IDOR1" src="https://github.com/user-attachments/assets/8473ca29-9947-4a26-8119-170bb00fa852" />
 
-
+</details>
 
 #### Remediation 
 
