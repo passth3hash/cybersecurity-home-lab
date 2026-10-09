@@ -18,7 +18,7 @@ Broken access control occurs when an application fails to enforce authorization 
 * **Severity:** High 
 * **Category:** Broken Access Control 
 * **Affected component:** Shopping basket 
-* **Affected endpoint:** GET /rest/basket/{id} 
+* **Affected endpoint:** `GET /rest/basket/{id}` 
 * **Testing approach:** Black-box 
 
 #### Observation 
@@ -71,7 +71,7 @@ The follow-up request shows the exploit. Keeping the exact same login session, t
 ### Finding 02 - Mass Data Exposure in Complaints endpoint
 * **Severity:** Medium 
 * **Category:** Broken Access Control  
-* **Affected endpoint:** GET /api/Complaints 
+* **Affected endpoint:** `GET /api/Complaints` 
 * **Testing approach:** Black-box 
 
 #### Observation 
