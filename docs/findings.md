@@ -192,7 +192,7 @@ The second test shows the server processing the single quote string, crashing th
 
 </details>
 
-**Successful Authentication Bypass Exploit**
+**Successful Authentication Bypass Exploit** 
 The final test documents the successful injection payload passing through, generating a `200 OK` status and an administrative token payload.
 
 <details>
