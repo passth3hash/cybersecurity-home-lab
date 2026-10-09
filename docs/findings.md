@@ -75,6 +75,7 @@ The follow-up request shows the exploit. Keeping the exact same login session, t
 - Ensure that the same ownership verification logic is applied to all basket operations, including viewing, adding items, modifying quantities, and checking out.
 
 
+
 ### Finding 02 - Mass Data Exposure in Complaints endpoint
 
 **Severity:** Medium 
@@ -136,7 +137,8 @@ Unauthenticated Request Check - The final test proves that while the system lack
 <details>
 <summary>📸 <b>Unauthenticated Request (401 Unauthorized Response)</b></summary>
 
-<img width="940" height="544" alt="Mass data2" src="https://github.com/user-attachments/assets/8a254c2a-eda8-49d7-bbd9-2caee4b7f550" />
+<img width="940" height="543" alt="Mass data2" src="https://github.com/user-attachments/assets/7cf4581c-f026-4942-9d44-03759f7a0b0f" />
+
 
 </details>
 
@@ -144,6 +146,104 @@ Unauthenticated Request Check - The final test proves that while the system lack
 
 - Return only the complaints the user is authorized to view.
 - If complaint listings are intended for administrators, implement strict Role-Based Access Control (RBAC) on the server to ensure only accounts with verified administrator privileges can access the `/api/Complaints/` path.
+
+
+
+## 2 — Injection
+
+Injection vulnerabilities occur when an application handles user input in an unsafe manner, allowing that input to alter the structure and execution of an underlying command or database query.
+
+### Finding 03 — SQL Injection: Login Authentication Bypass
+
+* **Severity:** Critical
+* **Category:** Injection — SQL Injection
+* **Affected Component:** Login Interface
+* **Affected Endpoint:** `POST /rest/user/login`
+* **Testing Approach:** Black-box testing
+
+#### Observation
+
+I initiated testing by sending a standard login request containing a valid email address and an incorrect password. The application returned a standard `401 Unauthorized` response.
+
+Following this, I appended a single quote character (`'`) to the email value. The backend application responded with a `500 Internal Server Error` and exposed a raw, verbose database error message in the server response. This behavior strongly indicated that user input was being concatenated directly into database queries without sanitization.
+
+#### Hypothesis
+
+The testing targeted a potential SQL injection vulnerability within the login input fields, where malicious syntax could manipulate the logic of the backend SQL query to alter authentication enforcement.
+
+#### Validation
+
+To validate this vulnerability, I intercepted the login request and injected a classic SQL authentication bypass payload into the email field:
+
+```json
+{
+  "email": "admin@juice-shop.op' OR 1=1--",
+  "password": "test"
+}
+```
+The database processed the injected payload, forcing the query evaluation to always return true (`1=1`) while commenting out (`--`) the password check entirely.
+Instead of rejecting the request, the application returned a `200 OK` response status, generated an authenticated JSON Web Token (JWT), and granted full administrative access to the user session without requiring a valid password.
+
+#### Impact
+
+An unauthenticated user can exploit this structural flaw to bypass the authentication system and gain full administrative privileges over the application.
+
+#### Result
+
+**Confirmed — SQL injection resulting in administrative authentication bypass.**
+
+#### Evidence
+
+The visual timeline verifying the authentication bypass sequence is detailed below:
+
+**Normal Login Failure** 
+The initial test demonstrates the application successfully enforcing standard password verification under normal conditions.
+
+<details>
+<summary>📸 <b>401 Unauthorized Response (Incorrect Password)</b></summary>
+
+<img width="939" height="548" alt="sql" src="https://github.com/user-attachments/assets/7010c10e-7798-451c-a6b5-e541af3c327a" />
+
+</details>
+
+**Verbose database error leak**
+The second test shows the server processing the single quote string, crashing the backend query, and exposing raw database system details.
+
+<details>
+<summary>📸 <b>500 Internal Server Error (Database Information Leak)</b></summary>
+
+<img width="939" height="589" alt="sql1" src="https://github.com/user-attachments/assets/7a22a07e-00ed-4a3c-ac67-63eab70ea7bd" />
+
+</details>
+
+**Successful Authentication Bypass Exploit**
+The final test documents the successful injection payload passing through, generating a `200 OK` status and an administrative token payload.
+
+<details>
+<summary>📸 <b>200 OK Response (Administrative Access Granted)</b></summary>
+
+<img width="938" height="547" alt="sql2" src="https://github.com/user-attachments/assets/34c02d79-1de8-404c-b844-2b44e37721e3" />
+
+</details>
+
+#### Remediation
+
+- Use parameterized SQL queries instead of building database queries by inserting user input directly into SQL statements.
+- Handle database errors on the server and return generic error messages to users.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
