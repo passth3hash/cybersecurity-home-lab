@@ -342,6 +342,75 @@ Below is a visual timeline of verifying data exposure
 - Enforce server-side authorization so users can access only the data they are permitted to view.
 - Return only the fields necessary for the endpoint's intended purpose.
 
+### Finding 06 - Unauthenticated Access to Application Configuration
+* **Severity:** Medium
+* **Category:** Sensitive Data Exposure
+* **Affected Component:** Application Configuration API
+* **Affected Endpoint:** `GET /rest/admin/application-configuration` 
+* **Testing Approach:** Black-box
+
+#### Observation
+While exploring the application's API endpoints using Burp Suite, I discovered that the `/rest/admin/application-configuration` address returned a large JSON response without requiring authentication. The response contained application settings, challenge-related configuration, social media links, a Google OAuth client ID, product data, and security-question-related information.
+
+#### Hypothesis
+The endpoint may expose sensitive configuration or security-related information to unauthenticated users because appropriate access controls may not be enforced.
+
+#### Validation
+I evaluated this issue by sending a direct `GET` request to the configuration endpoint using Burp Suite without attaching any active login tokens or cookies. The server responded with a `200 OK` status and returned a large file including security-question-related information.
+
+#### Impact
+Exposing sensitive configuration and security-related information may help an attacker understand the application's implementation and plan more targeted attacks. It gives them a map of how the application is built, what features are active, and how security questions are handled, making it much easier to plan more targeted attacks.
+
+#### Result
+**Confirmed — Unauthenticated access to application configuration.**
+
+The endpoint returned a large configuration response without requiring authentication.
+
+#### Evidence
+Below is a visual timeline of verifying the configuration exposure
+
+**Unauthenticated API Request:** 
+
+<details>
+<summary>📸 <b>A Burp Suite screenshot showing a successful request sent to the admin configuration endpoint without login credentials.</b></summary>
+
+<img width="1029" height="585" alt="application configuration" src="https://github.com/user-attachments/assets/0fb56487-3fea-4576-946a-7d72c5286bed" />
+
+</details>
+
+**A Redacted Setup Data Excerpt:**
+
+<details>
+<summary>📸 <b>A redacted JSON excerpt showing representative configuration fields.</b></summary>
+
+<img width="1028" height="588" alt="application configuration1" src="https://github.com/user-attachments/assets/906f063b-d399-4ca0-9de4-60d3df41ee30" />
+
+</details>
+
+#### Remediation
+- Restrict this endpoint so that only logged-in administrators can access it, returning a 401 Unauthorized error to anyone else.
+- Remove security-question answers, secrets, and other sensitive values from API responses.
+- Review which configuration fields are intended to be publicly accessible.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
