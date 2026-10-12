@@ -206,6 +206,97 @@ The final test documents the successful injection payload passing through, gener
 - Use parameterized SQL queries instead of building database queries by inserting user input directly into SQL statements.
 - Handle database errors on the server and return generic error messages to users.
 
+### Finding 04 - DOM-Based Cross-Site Scripting (XSS) 
+* **Severity:** Medium
+* **Category:** Injection — Cross-Site Scripting (DOM-Based XSS)
+* **Affected Component:** Search Page
+* **Affected Location:** `/#/search?q=` 
+* **Testing Approach:** Black-box testing
+
+#### Observation
+During black-box testing, the application search page interpreted HTML text supplied directly through the query parameter rather than rendering it as safe, literal plain text.
+
+Initial input of a basic HTML structural tag (`<b>XSS-LAB-002</b>`) resulted in the application rendering the string in **bold**. Subsequent validation confirmed that client-side script execution context could be achieved through this vector.
+
+#### Hypothesis
+The search page may be inserting user-controlled input into the page in a way that allows HTML injection and JavaScript execution.
+
+#### Validation
+I tested the search page by entering non-malicious HTML and JavaScript test inputs to see how the website handled them:
+
+- **HTML Test:** <b>XSS-LAB-002</b> — rendered as bold text, showing that the input was interpreted as HTML.
+- **JavaScript Test:** An image-based XSS payload using `src=x` and an `onerror` event handler triggered a JavaScript alert in the browser.
+
+After seeing this, I checked the website's source code and found the problem on line 11 of `search-result.component.html`:
+
+```html
+<span id="searchValue" [innerHTML]="searchValue"></span>
+```
+
+This code uses `[innerHTML]`, which tells the website to trust whatever the user types as real HTML. Since the payload runs completely in the browser and does not show up in the backend Burp Suite logs, this confirms it is a DOM-based XSS vulnerability.
+
+#### Impact
+An attacker could build a special link containing this payload and trick another user into clicking it. If the victim clicks the link, the attacker's script will run inside their browser session. Depending on the user's account privileges, this could allow the attacker to interact with the app as if they were that user or view sensitive information on the screen.
+
+#### Result
+**Confirmed — DOM-based XSS.**
+
+Testing showed that the search page interprets HTML tags, and my image-based payload successfully triggered a browser alert. Looking at the frontend source code confirmed that the application uses an unsafe `[innerHTML]` binding to display the search query.
+
+#### Evidence
+Below is a visual timeline of verifying the XSS vulnerability: 
+
+**HTML Interpretation:**
+
+<details>
+<summary>📸 <b> A screenshot showing the text rendering in bold, confirming the page reads HTML tags</b></summary>
+
+<img width="1206" height="144" alt="XSS" src="https://github.com/user-attachments/assets/24e6d953-a83c-42b7-99fd-3a4bdecec387" />
+
+</details>
+
+**Script Execution:** 
+
+<details>
+<summary>📸 <b> A screenshot showing the JavaScript alert box popup triggered by the image payload.</b></summary>
+
+<img width="1202" height="492" alt="XSS1" src="https://github.com/user-attachments/assets/52430112-623c-42c7-9d45-3b85cb7b443b" />
+
+</details>
+
+**Backend Verification:** 
+
+<details>
+<summary>📸 <b> A Burp Suite screenshot proving the payload never touches or reflects in the server's response.</b></summary>
+
+<img width="941" height="589" alt="XSS2" src="https://github.com/user-attachments/assets/324d158f-9cea-4284-a862-32b917c11323" />
+
+</details>
+
+**Source Code inspection:** 
+
+<details>
+<summary>📸 <b> A screenshot of the frontend code highlighting the exact `[innerHTML]` line causing the bug.</b></summary>
+
+<img width="846" height="123" alt="XSS3" src="https://github.com/user-attachments/assets/4c5f4725-5070-4ea8-bdca-5eb6ed666600" />
+
+</details>
+
+#### Remediation
+- Avoid inserting untrusted input through innerHTML when plain-text rendering is sufficient.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
