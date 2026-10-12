@@ -288,7 +288,7 @@ Below is a visual timeline of verifying the XSS vulnerability:
 
 
 
-## 2 — Sensitive Data Exposure 
+## 3 — Sensitive Data Exposure 
 Sensitive data exposure occurs when an application reveals confidential or personal information to users who are not authorized to access it. This can include password hashes, personal details, authentication tokens or internal application data. 
 
 ### Finding 05 — Unauthenticated Access to Sensitive User Data
@@ -342,7 +342,7 @@ Below is a visual timeline of verifying data exposure
 - Enforce server-side authorization so users can access only the data they are permitted to view.
 - Return only the fields necessary for the endpoint's intended purpose.
 
-### Finding 06 - Unauthenticated Access to Application Configuration
+### Finding 06 — Unauthenticated Access to Application Configuration
 * **Severity:** Medium
 * **Category:** Sensitive Data Exposure
 * **Affected Component:** Application Configuration API
@@ -391,6 +391,95 @@ Below is a visual timeline of verifying the configuration exposure
 - Restrict this endpoint so that only logged-in administrators can access it, returning a 401 Unauthorized error to anyone else.
 - Remove security-question answers, secrets, and other sensitive values from API responses.
 - Review which configuration fields are intended to be publicly accessible.
+
+
+
+## 4 — Business Logic 
+Business logic vulnerabilities occur when an application fails to enforce the rules that govern how its features should work. Attackers may abuse these weaknesses to perform unauthorized actions, bypass restrictions or gain unintended benefits such as applying an unauthorized discount. 
+
+### Finding 07 — Coupon Forgery Allows an Unauthorized 99% Discount
+* **Severity:** Medium
+* **Category:** Business Logic Flaw / Improper Input Validation
+* **Affected Component:** Coupon and Checkout Functionality
+* **Affected Endpoint:** `PUT /rest/basket/{basketId}/coupon/{couponCode}` 
+* **Testing Approach:** Gray-box
+
+#### Observation
+While testing how the website handles discount codes at checkout, I found that I could manipulate the system into giving me a 99% discount, even though the legitimate promotional coupon I had observed offered a lower discount.
+
+The application returned a successful response indicating a 99% discount, and the checkout order summary later showed the discounted price.
+
+#### Hypothesis
+The application creates its discount codes using a predictable format. Because the backend server does not double-check if the discount code was actually made by an administrator, a user can easily change the numbers inside the code to invent their own discount amount.
+
+#### Validation
+I inspected the coupon-generation and validation logic and found that coupon values were encoded using Z85. 
+
+**Reading the Code:** I checked the application's backend files and discovered the coupon codes format consisted of an abbreviated month, a two-digit year, and a discount percentage, such as OCT26-99. The validation logic decoded the coupon, checked its format, and verified that the coupon's month and year matched the current month and year. However, I found no cryptographic integrity check to prevent someone from modifying the discount percentage and generating a new encoded value.
+
+To validate the issue, I generated a coupon representing a 99% discount using a short Python proof of concept and submitted it through Burp Suite. The application returned `200 OK` with a response indicating `{"discount":99}`.
+
+I then verified the business impact through the checkout flow. The order summary showed a product priced at €3.49, a promotion of €3.46, and a final total of €0.03, consistent with a 99% discount.
+
+#### Impact
+An attacker could use this trick to buy any product in the store for virtually free, causing massive financial loss for a real business. 
+
+#### Result
+**Confirmed — Forged coupon accepted with a 99% discount.**
+
+The server accepted my modified coupon code, and the final checkout summary screen confirmed that the price dropped down to just 3 cents.
+
+#### Evidence
+Below is a visual timeline verifying the coupon forgery flaw.
+
+**Manipulated API Response:**
+<details>
+<summary>📸 <b>A Burp Suite screenshot showing the coupon request returning a 200 OK and confirming a 99% discount.</b></summary>
+
+<img width="1031" height="538" alt="forged ticket" src="https://github.com/user-attachments/assets/8aae15e2-3f75-4f48-97ce-2a3915ae0172" />
+
+</details>
+
+**Price Bypassed Checkout Summary:**
+<details>
+<summary>📸 <b>A screenshot of the checkout screen showing the original €3.49 price dropped to a final total of €0.03.</b></summary>
+
+<img width="1032" height="587" alt="final price1" src="https://github.com/user-attachments/assets/c9654141-e3ac-49be-b140-0a961a03aa1f" />
+
+</details>
+
+**Python Code Tool:**
+<details>
+<summary>💻 <b>The simple Python proof-of-concept script used to encode the custom Z85 coupon values.</b></summary>
+
+import base64
+
+coupon = "OCT26-99"
+
+encoded = base64.z85encode(coupon.encode())
+
+print(encoded.decode())
+
+</details>
+
+#### Remediation
+- Do not use simple, predictable formats like Z85 to handle discount data. Instead, coupon codes should be completely random, secret strings stored safely in a backend database.
+- Never let the web browser dictate the discount percentage. The backend server must strictly control what each code is worth.
+- Generate coupons using a cryptographically secure, server-controlled process.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
