@@ -211,7 +211,7 @@ The final test documents the successful injection payload passing through, gener
 * **Category:** Injection — Cross-Site Scripting (DOM-Based XSS)
 * **Affected Component:** Search Page
 * **Affected Location:** `/#/search?q=` 
-* **Testing Approach:** Black-box testing
+* **Testing Approach:** Gray-box (Black-box and source code review)
 
 #### Observation
 During black-box testing, the application search page interpreted HTML text supplied directly through the query parameter rather than rendering it as safe, literal plain text.
@@ -284,6 +284,71 @@ Below is a visual timeline of verifying the XSS vulnerability:
 
 #### Remediation
 - Avoid inserting untrusted input through innerHTML when plain-text rendering is sufficient.
+- **For Angular:** Change the code from `[innerHTML]="searchValue"` to simple double curly brackets `{{ searchValue }}`. This tells the website to treat whatever the user types as normal, readable text instead of running it as live HTML code.
+
+
+
+## 2 — Sensitive Data Exposure 
+Sensitive data exposure occurs when an application reveals confidential or personal information to users who are not authorized to access it. This can include password hashes, personal details, authentication tokens or internal application data. 
+
+### Finding 05 — Unauthenticated Access to Sensitive User Data
+* **Severity:** High
+* **Category:** Sensitive Data Exposure
+* **Affected Component:** User Data API
+* **Affected Location:**  `GET /rest/memories/`
+* **Testing Approach:** Black-box
+
+#### Observation
+During testing, I found that the `/rest/memories/` endpoint returned user records without requiring authentication. The response contained sensitive information, including usernames, email addresses, password hashes, user roles, and other account-related fields.
+
+#### Hypothesis
+If the endpoint does not enforce authentication and authorization, an unauthenticated user may be able to retrieve sensitive information belonging to multiple application users.
+
+#### Validation
+I tested this vulnerability by sending a direct GET request to the /rest/memories/ endpoint using Burp Suite without including any login tokens or session cookies.
+The server responded with a 200 OK status and dumped a large list of user accounts containing private details. To verify it wasn't a fluke, I cleared my cookies and repeated the test in a completely fresh private browser window. The data still loaded, confirming that anyone can access this information without logging in.
+
+#### Impact
+An attacker could easily download a list of all user accounts on the system. They could use the leaked email addresses for targeted phishing attacks or attempt to crack the exposed password hashes offline to take over accounts.
+
+#### Result
+**Confirmed — Unauthenticated access to sensitive user data.**
+
+The endpoint returned multiple user records and sensitive fields without requiring authentication. The issue was reproduced in a fresh private browser session.
+
+#### Evidence
+Below is a visual timeline of verifying data exposure 
+
+**Unauthenticated  API Request:**
+
+<details>
+<summary>📸 <b> A Burp Suite screenshot showing a successful request sent without any login tokens.</b></summary>
+
+<img width="1024" height="533" alt="sensitive data exposure1" src="https://github.com/user-attachments/assets/d567c227-71af-4164-b704-259647caefa8" />
+
+</details>
+
+**Redacted Data Leak Excerpt:**
+
+<details>
+<summary>📸 <b> A cropped screenshot of the JSON response showing where fields like emails and password hashes were exposed (with all real values blurred out for safety).</b></summary>
+
+<img width="942" height="588" alt="sensitive data exposure2" src="https://github.com/user-attachments/assets/5470f28a-a4c4-4d3a-a892-97535edc15bb" />
+
+</details>
+
+#### Remediation
+- Require authentication for endpoints that expose private user information.
+- Enforce server-side authorization so users can access only the data they are permitted to view.
+- Return only the fields necessary for the endpoint's intended purpose.
+
+
+
+
+
+
+
+
 
 
 
