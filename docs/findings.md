@@ -549,7 +549,7 @@ Below is a visual timeline of verifying the configuration exposure:
 
 
 
-## 5 — Cryptographic Failures 
+## 6 — Cryptographic Failures 
 Cryptographic failures occur when an application uses weak or inappropriate cryptographic methods to protect sensitive information. For example, using a fast, unsalted hash such as MD5 for passwords makes it easier for an attacker to recover passwords if the hashes are exposed.
 
 ### Finding 09 — Weak Password Hashing Using MD5
@@ -620,7 +620,7 @@ password: {
 
 
 
-## 6 — Improper JWT Validation
+## 7 — Improper JWT Validation
 JSON Web Token (JWT) is a compact token used to transmit information between parties. Web applications commonly use JWTs to identify authenticated users and carry claims about them. A JWT can be digitally signed to help verify that its contents have not been modified.
 
 ### Finding 10 — Unsigned JWT Accepted (JWT None Algorithm Bypass)
