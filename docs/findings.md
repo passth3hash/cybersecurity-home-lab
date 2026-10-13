@@ -543,6 +543,136 @@ Below is a visual timeline of verifying the configuration exposure:
 
 </details>
 
+#### Remediation
+- Remove public backups and never store public backups (like `.bak`, `.old`, or `.zip`) in folders that can be accessed from the web browser.
+- Fix the file filter so it cannot be tricked by URL characters like `%2500`. It should safely clean up and validate the filename before checking its extension.
+
+
+
+## 5 — Cryptographic Failures 
+Cryptographic failures occur when an application uses weak or inappropriate cryptographic methods to protect sensitive information. For example, using a fast, unsalted hash such as MD5 for passwords makes it easier for an attacker to recover passwords if the hashes are exposed.
+
+### Finding 09 — Weak Password Hashing Using MD5
+* **Severity:** Medium
+* **Category:** Cryptographic Failures — Weak Password Hashing
+* **Affected Component:** User Authentication and Password Storage
+* **Affected Endpoint:** Password hashing function in `lib/insecurity.ts` and its use in `models/user.ts`
+* **Testing Approach:** White-box
+
+#### Observation
+While reviewing the application's backend code, I found that the website uses the **MD5** algorithm to scramble (hash) user passwords before saving them to the database. 
+
+MD5 is an old, general-purpose mathematical formula meant for checking file integrity, not for locking up secrets. It runs way too fast, which makes it an unsafe choice for protecting passwords.
+
+#### Hypothesis
+If an attacker manages to break into the database and steal the stored password hashes, the use of MD5 will make it very easy for them to reverse-engineer those hashes and steal the users' actual plaintext passwords using offline guessing tools.
+
+#### Validation
+I checked the application's source code files and confirmed the weakness directly in the logic:
+
+- In `lib/insecurity.ts`, I found the exact function that tells Node.js to use `'md5'` to process text.
+- In `models/user.ts`, I verified that this weak MD5 function is actively triggered whenever a user creates an account or changes their password.
+
+Because the code itself explicitly shows MD5 being used, the vulnerability is fully confirmed. I did not need to crack an actual user's password to prove the system is structurally weak.
+
+#### Impact
+MD5 is fast to calculate and does not provide the password-specific protections offered by modern password-hashing algorithms. If an attacker obtains the stored password hashes, they can attempt to guess passwords offline and compare the resulting MD5 hashes.
+
+This could expose users to account compromise, particularly if they use weak or reused passwords. The practical impact depends on whether an attacker can obtain the hashes and how resistant the passwords are to guessing.
+
+#### Result
+**Confirmed — The application uses an outdated and weak algorithm (MD5) for password security.** 
+
+#### Evidence
+Below is a look into the backend code exposing the weak configuration:
+
+**The Insecure Hashing Function:**
+<details>
+<summary>📋 <b>Click to view the MD5 implementation code found in lib/insecurity.ts</b></summary>
+
+```typescript
+// This line takes the string data and processes it using the weak MD5 algorithm
+export const hash = (data: string) => crypto.createHash('md5').update(data).digest('hex')
+```
+
+</details>
+
+**How the User Model Saves It:**
+<details>
+<summary>📋 <b>Click to view how the application applies the hash in models/user.ts</b></summary>
+
+```typescript
+// The application intercepts the plain password and runs it through the weak security.hash function
+password: {
+  type: DataTypes.STRING,
+  set (clearTextPassword: string) {
+    this.setDataValue('password', security.hash(clearTextPassword))
+  }
+},
+```
+
+</details>
+
+#### Remediation
+- Replace MD5 with a modern, slow, password-specific algorithm like **bcrypt**, **scrypt**, or **Argon2id**. These are designed to be intentionally slow to stop high-speed computer guessing attacks.
+- Ensure the new library automatically adds a "salt" (a random string of extra characters) to each password before hashing it. This ensures that even if two users have the exact same password, their hashes will look completely different in the database.
+- Force a safe password migration. The next time a user successfully logs in, grab their password, hash it using the new secure method, and overwrite the old MD5 hash.
+
+
+
+## 6 — Improper JWT Validation
+JSON Web Token (JWT) is a compact token used to transmit information between parties. Web applications commonly use JWTs to identify authenticated users and carry claims about them. A JWT can be digitally signed to help verify that its contents have not been modified.
+
+### Finding 10 — Unsigned JWT Accepted (JWT None Algorithm Bypass)
+* **Severity:** High
+* **Category:** Improper Authentication / JWT Validation Failure
+* **Affected Component:** JWT Authentication
+* **Affected Endpoint:** Authentication-protected API endpoints
+* **Testing Approach:** Black-box
+
+#### Observation
+During testing, I investigated how the application validates JSON Web Tokens (JWTs). I found that the application accepted a modified token that used the none (`"alg": "none"`) signing algorithm, which indicates that the token was not cryptographically signed.
+
+#### Hypothesis
+JSON Web Tokens use a cryptographic signature (like a wax seal on a letter) to prove they haven't been messed with. I guessed that if the website accepts tokens using the `none` algorithm, it means the server isn't enforcing that signature. If true, an attacker could change their user information inside the token to impersonate any user on the system without needing the server's secret key.
+
+#### Validation
+I modified a JWT in the lab environment by changing its header to use the none algorithm and adjusting its payload. I removed the signature, leaving just the header and payload dots. 
+
+The server accepted the unsigned token without throwing an error and successfully triggered the Juice Shop challenge-success alert for the **JWT None Algorithm** challenge.
+
+#### Impact
+This is a high-severity issue because it completely breaks the website's security doors. If a web application trusts an unsigned token, an attacker can modify their token payload data—such as changing a user ID number or changing a role parameter from `"role": "customer"` to `"role": "admin"`. 
+
+Because the server fails to double-check the signature, the attacker can instantly log into anyone else's account or gain full administrative controls over the entire platform.
+
+#### Result
+**Confirmed — The application fails to properly validate JWT signatures and accepts the insecure `none` algorithm.**
+
+#### Evidence
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
