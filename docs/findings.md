@@ -469,6 +469,85 @@ print(encoded.decode())
 
 
 
+## 5 — Security Misconfiguration 
+Security misconfiguration occurs when an application or system is configured incorrectly or lacks appropiate security controls. This can expose sensitive files, reveal internal information or even allow users to bypass intended restrictions. 
+
+### Finding 08 — Developer Backup Exposed Through File-Validation Bypass
+* **Severity:** Low
+* **Category:** Security Misconfiguration
+* **Affected Component:** FTP File Access
+* **Affected Endpoint:** `GET /ftp/package.json.bak` 
+* **Testing Approach:** Black-box
+
+#### Observation
+While exploring the application's `/ftp/` directory, I discovered a backup file named `package.json.bak`. A direct request to this file was blocked with a message stating that only .md and .pdf files were allowed. 
+
+A direct request to this file was blocked with a message stating that only .md and .pdf files were allowed.
+
+#### Hypothesis
+The file-access validation may be bypassable by manipulating the requested filename, allowing a file with a disallowed extension to be retrieved.
+
+#### Validation
+First, I requested the normal URL `/ftp/package.json.bak`. The server blocked me and returned a `403 Forbidden` error. Next, I added a URL trick (`%2500.md`) to the end of the filename: `/ftp/package.json.bak%2500.md`.
+
+The file contained application general information about the application and its components. I did not identify credentials or other confirmed secrets in the exposed manifest.
+
+A null byte essentially tells the server's backend code "stop reading the filename right here". 
+
+#### Impact
+Exposing backup files is risky because it reveals the exact blueprint of the application's backend. By looking at the stolen file, an attacker can see the exact versions of the software libraries used and look up public databases (like CVEs) to see if any of these specific versions have unpatched, known security bugs that can be used to take over the server.
+
+#### Result
+**Confirmed — The file checker was bypassed and a backup file was exposed.** 
+
+The standard request was blocked, but the modified URL successfully downloaded the file.
+
+#### Evidence
+Below is a visual timeline of verifying the configuration exposure:
+
+**Blocked Request (Baseline Test):**
+<details>
+<summary>📸 <b>A Burp Suite screenshot showing the original file request returning a 403 Forbidden error.</b></summary>
+
+<img width="938" height="585" alt="secuirty misconfiguration" src="https://github.com/user-attachments/assets/34f8c4a9-1b9c-4445-906f-9902d5f35218" />
+
+</details>
+
+**Bypassed Filter Request:**
+<details>
+<summary>📸 <b>A Burp Suite screenshot showing the null byte trick successfully bypassing the filter and returning a 200 OK.</b></summary>
+
+<img width="1157" height="756" alt="security misconfiguration1" src="https://github.com/user-attachments/assets/235f88f8-657f-447b-8185-e6e3c0da5e3d" />
+
+</details>
+
+**Exposed Backup Contents:**
+<details>
+<summary>📋 <b>Click to expand the full text manifest retrieved from the package.json.bak file.</b></summary>
+
+```json
+{
+  "name": "juice-shop",
+  "version": "6.2.0-SNAPSHOT",
+  "description": "An intentionally insecure JavaScript Web Application",
+  "dependencies": {
+    "body-parser": "~1.18",
+    "express": "~4.16",
+    "express-jwt": "0.1.3",
+    "js-yaml": "3.10",
+    "sequelize": "~4",
+    "sqlite3": "~3.1.13"
+  }
+}
+```
+
+</details>
+
+
+
+
+
+
 
 
 
