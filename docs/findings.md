@@ -668,8 +668,8 @@ The following evidence demonstrates that the application accepted an unsigned JW
 </details>
 
 #### Remediation
-- Reject the none algorithm: Configure the application to reject unsigned JWTs. If a token specifies "alg": "none", the application must reject it rather than treating it as authenticated.
-- Enforce an approved signing algorithm: Configure the JWT library to accept only the expected signing algorithm, such as RS256 or HS256, according to the application's design. Verify each token's signature using the appropriate key.
+- Configure the application to reject unsigned JWTs. If a token specifies "alg": "none", the application must reject it rather than treating it as authenticated.
+- Configure the JWT library to accept only the expected signing algorithm, such as RS256 or HS256, according to the application's design. Verify each token's signature using the appropriate key.
 
 
 
