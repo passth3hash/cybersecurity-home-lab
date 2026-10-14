@@ -652,7 +652,6 @@ Because the server fails to double-check the signature, the attacker can instant
 #### Evidence
 The following evidence demonstrates that the application accepted an unsigned JWT during testing.
 
-**The Modified JWT Header and Payload:**
 <details>
 <summary>📸 <b>The JWT header was modified to use the none algorithm, and the email claim was changed to jwtn3d@juice-sh.op. The signature was removed, leaving an unsigned token.</b></summary>
 
@@ -662,11 +661,16 @@ The following evidence demonstrates that the application accepted an unsigned JW
 
 **Challenge Success Confirmation:**
 <details>
-<summary>📸 <b>TAfter submitting the modified token during testing, OWASP Juice Shop displayed the challenge-success notification and marked the Unsigned JWT challenge as solved.</b></summary>
+<summary>📸 <b>After submitting the modified token during testing, OWASP Juice Shop displayed the challenge-success notification and marked the Unsigned JWT challenge as solved.</b></summary>
 
 <img width="1625" height="297" alt="unsignedJWT" src="https://github.com/user-attachments/assets/8f1317e2-e855-4f3e-bf3d-cde348a47d9f" />
 
 </details>
+
+#### Remediation
+- Reject the none algorithm: Configure the application to reject unsigned JWTs. If a token specifies "alg": "none", the application must reject it rather than treating it as authenticated.
+- Enforce an approved signing algorithm: Configure the JWT library to accept only the expected signing algorithm, such as RS256 or HS256, according to the application's design. Verify each token's signature using the appropriate key.
+
 
 
 
