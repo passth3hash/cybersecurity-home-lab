@@ -650,6 +650,24 @@ Because the server fails to double-check the signature, the attacker can instant
 **Confirmed — The application fails to properly validate JWT signatures and accepts the insecure `none` algorithm.**
 
 #### Evidence
+The following evidence demonstrates that the application accepted an unsigned JWT during testing.
+
+**The Modified JWT Header and Payload:**
+<details>
+<summary>📸 <bThe JWT header was modified to use the none algorithm, and the email claim was changed to jwtn3d@juice-sh.op. The signature was removed, leaving an unsigned token.</b></summary>
+
+<img width="1100" height="449" alt="usignedJWT1" src="https://github.com/user-attachments/assets/bd1f0bea-a31a-4dc8-8828-6b99a12028bc" />
+
+</details>
+
+**Challenge Success Confirmation:**
+<details>
+<summary>📸 <bTAfter submitting the modified token during testing, OWASP Juice Shop displayed the challenge-success notification and marked the Unsigned JWT challenge as solved.</b></summary>
+
+<img width="1625" height="297" alt="unsignedJWT" src="https://github.com/user-attachments/assets/8f1317e2-e855-4f3e-bf3d-cde348a47d9f" />
+
+</details>
+
 
 
 
