@@ -672,7 +672,7 @@ The following evidence demonstrates that the application accepted an unsigned JW
 - Configure the JWT library to accept only the expected signing algorithm, such as RS256 or HS256, according to the application's design. Verify each token's signature using the appropriate key.
 
 ### Finding 11 — Forged Signed JWT (JWT algorithm confusion bypass) 
-* **Severity:** Critical
+* **Severity:** High
 * **Category:** Improper Authentication / Cryptographic Signature Bypass
 * **Affected Component:** JWT Authentication
 * **Affected Endpoint:** Authentication-protected API endpoints
@@ -684,14 +684,18 @@ I wanted to push myself on this finding because, at first sight, it seemed very 
 During my enumeration, I discovered a publicly accessible directory on the server containing the website's public cryptographic RSA key file at `/encryptionkeys/jwt.pub`. I wanted to see what would happen if I changed the token's algorithm to HS256 and used this discovered key file to sign a fake token.
 
 #### Hypothesis
-According to documentation from **PortSwigger Web Security Academy** and **WorkOS**, this flaw is known as **Algorithm Confusion**. 
+According to documentation from **PortSwigger Web Security Academy** and **WorkOS**, this weakness is known as **Algorithm Confusion**. 
 
-The main problem is that **the server blindly trusts the user-controlled `alg` claim inside the incoming token header to decide how it should check the signature**. Instead of forcing a strict backend rule, the server lets the token dictate the security choices. Therefore, manually changing the algorithm from **RSA (RS256)** to **HMAC (HS256)** completely tricks the server. 
- 
-The application normally uses an asymmetric algorithm (RS256), meaning it signs tokens with a secret private key and verifies them with a public key. However, if I change the header to a symmetric algorithm (HS256), the server gets confused and switches to a password-checking mode. Because the backend code is hardcoded to pass the public key file into the verification function, it mistakenly treats its own public key text as the HMAC password. Since this key is public, an attacker can use it to sign a forged token and impersonate any user.
+The application normally uses RS256, which signs tokens with a private key and verifies them with a public key. However, if the application also accepts HS256 unexpectedly, it may treat the public key as a secret password for checking an HMAC signature.
+
+Because the public key is available to anyone, this could allow an attacker to create a token that passes signature verification without knowing the private key. I investigated whether this behavior was possible in the lab.
 
 #### Validation
-I took what I learned from reading PortSwigger and WorkOS and used a simple Python script template instead. By using basic programming blocks (`hmac` and `base64`), the script put the pieces of the token together step-by-step. I set the target email to `rsa_lord@juice-sh.op` and made sure the script stripped out any extra spaces so the format matched exactly what the Juice Shop backend database looks for.
+I took what I learned from reading PortSwigger and WorkOS and used a simple Python script template instead. I reviewed the script's main components, including how the token was assembled and how the signature was generated using the public key. I then used the resulting token during testing in Burp Suite.
+
+OWASP Juice Shop displayed the challenge-success notification, confirming that the forged token was accepted in the tested challenge.
+
+This exercise helped me understand how JWT algorithm confusion can occur and why applications must strictly validate token signatures and permitted signing methods.
 
 <details>
 <summary>🛠️ <b>View Code</b></summary>
@@ -751,7 +755,8 @@ payload = {
 }
 ```
 
-This sets up a base64 encoding and decoding translation mechanism for our data. Because a JSON Web Token must be a single solid string of letters and numbers to be sent over the internet, the script uses this helper function to turn the plain JSON text into a scrambled web-safe string, translates it into clean text using the UTF-8 dictionary, and removes any extra equal signs (=) from the very end since standard tokens don't allow them.
+**Encode the data using Base64URL**
+This function converts the data into a text format that can be used in a JWT. 
 
 ```python
 def base64url_encode(data):
@@ -759,7 +764,8 @@ def base64url_encode(data):
     return encoded.decode('utf-8').rstrip('=')
 ```
 
-The script then uses the provided public RSA key block as an HMAC password.
+**Load the Public RSA Key**
+The script uses the application's RSA public key as the secret when creating the signature. This tests whether the application incorrectly accepts a token created using an unexpected signing method.
 
 ```python
 public_key_bytes = b"""-----BEGIN RSA PUBLIC KEY-----
@@ -767,7 +773,8 @@ public_key_bytes = b"""-----BEGIN RSA PUBLIC KEY-----
 -----END RSA PUBLIC KEY-----"""
 ```
 
-Turns data objects into plain text and scrambles them through the base64 function. The setting separators=(',', ':') is used to remove all extra spaces from the text because the web server requires the data to be packed tightly without spacing. Finally, the script glues the scrambled header and payload together with a dot in the middle so they are ready to be signed.
+**Prepare the Header and Payload**
+The script converts the header and payload into JSON text, then encodes them using the function above. The separators=(',', ':') setting removes unnecessary spaces from the payload. Finally, the encoded header and payload are joined with a dot to prepare them for signing.
 
 ```python
 header_encoded = base64url_encode(json.dumps(header).encode('utf-8'))
@@ -775,18 +782,53 @@ payload_encoded = base64url_encode(json.dumps(payload, separators=(',', ':')).en
 signing_input = f"{header_encoded}.{payload_encoded}".encode('utf-8')
 ```
 
-Runs the signature calculation using Python's built-in `hmac` tool. It takes the combined text string, runs it through the SHA-256 cryptographic mode (`hashlib.sha256`), and uses the public key text bytes as the secret password string. The resulting raw hash numbers are then scrambled into a web-safe Base64 text string.
+**Create the signature**
+The script uses Python's built-in hmac function and SHA-256 to create a signature. It uses the public RSA key as the secret for this calculation, testing whether the application incorrectly handles the difference between signing methods.
 
 ```python
 signature = hmac.new(public_key_bytes, signing_input, hashlib.sha256).digest()
 signature_encoded = base64url_encode(signature)
 ```
 
-The final part, takes the scrambled header text, scrambled payload text, and newly forged signature text, and glues them together using dots to build the classic three-part architecture of a valid JSON Web Token (`Header.Payload.Signature`).
+**Assemble the final JWT**
+The final step joins the encoded header, encoded payload, and signature with dots to form the three-part JWT structure.
 
 ```python
 forged_token = f"{header_encoded}.{payload_encoded}.{signature_encoded}"
 ```
+
+#### Impact
+This vulnerability could allow an attacker to create forged JWTs without knowing the server's private signing key. If the application accepts these tokens for authentication, an attacker may be able to impersonate users or gain unauthorized access.
+
+#### Result
+**Confirmed — The forged signed JWT challenge accepted a token signed using HS256 with the application's public RSA key as the secret. This demonstrates an algorithm-validation weakness in the tested flow.**
+
+#### Evidence
+The following evidence shows the public RSA key used during my investigation and the successful completion of the Forged Signed JWT challenge.
+
+<details>
+<summary>📸 <b>Public RSA key retrieved from /encryptionkeys/jwt.pub</b></summary>
+
+<img width="1766" height="166" alt="publicrsa" src="https://github.com/user-attachments/assets/39d9b413-6402-4ff5-8a36-72accf9b6e07" />
+
+</details>
+
+**Challenge Success Confirmation:**
+
+<details>
+<summary>📸 <b>OWASP Juice Shop confirms successful completion of the Forged Signed JWT challenge.</b></summary>
+
+<img width="1652" height="877" alt="forged signed jwt" src="https://github.com/user-attachments/assets/b9196afc-a3be-4832-91ad-06627eb1406e" />
+
+</details>
+
+#### Remediation
+- Configure JWT verification to accept only the expected algorithm, such as RS256. Reject tokens that use unexpected algorithms, including HS256 or none.
+- Verify RS256 signatures using the trusted RSA public key. Never use that public key as an HMAC secret.
+
+
+
+
 
 
 
