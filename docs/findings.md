@@ -824,7 +824,7 @@ The following evidence shows the public RSA key used during my investigation and
 
 #### Remediation
 - Configure JWT verification to accept only the expected algorithm, such as RS256. Reject tokens that use unexpected algorithms, including HS256 or none.
-- Verify RS256 signatures using the trusted RSA public key. Never use that public key as an HMAC secret.
+- Verify RS256 signatures using the trusted RSA public key. Never use that public key as an HMAC secret. 
 
 
 
