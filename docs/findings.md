@@ -671,6 +671,31 @@ The following evidence demonstrates that the application accepted an unsigned JW
 - Configure the application to reject unsigned JWTs. If a token specifies "alg": "none", the application must reject it rather than treating it as authenticated.
 - Configure the JWT library to accept only the expected signing algorithm, such as RS256 or HS256, according to the application's design. Verify each token's signature using the appropriate key.
 
+### Finding 11 — Forged Signed JWT (JWT algorithm confusion bypass) 
+* **Severity:** Critical
+* **Category:** Improper Authentication / Cryptographic Signature Bypass
+* **Affected Component:** JWT Authentication
+* **Affected Endpoint:** Authentication-protected API endpoints
+* **Testing Approach:** White-box 
+
+#### Observation
+I wanted to push myself on this finding because, at first sight, it seemed very complicated and out of my reach. I decided to study how the underlying code works rather than relying on automated tools. 
+
+During my enumeration, I discovered a publicly accessible directory on the server containing the website's public cryptographic RSA key file at `/encryptionkeys/jwt.pub`. I wanted to see what would happen if I changed the token's algorithm to HS256 and used this discovered key file to sign a fake token.
+
+#### Hypothesis
+According to documentation from **PortSwigger Web Security Academy** and **WorkOS**, this flaw is known as **Algorithm Confusion**. 
+
+The main problem is that **the server blindly trusts the user-controlled `alg` claim inside the incoming token header to decide how it should check the signature**. Instead of forcing a strict backend rule, the server lets the token dictate the security choices. Therefore, manually changing the algorithm from **RSA (RS256)** to **HMAC (HS256)** completely tricks the server. 
+ 
+The application normally uses an asymmetric algorithm (RS256), meaning it signs tokens with a secret private key and verifies them with a public key. However, if I change the header to a symmetric algorithm (HS256), the server gets confused and switches to a password-checking mode. Because the backend code is hardcoded to pass the public key file into the verification function, it mistakenly treats its own public key text as the HMAC password. Since this key is public, an attacker can use it to sign a forged token and impersonate any user.
+
+#### Validation
+
+
+
+
+
 
 
 
