@@ -694,7 +694,7 @@ The application normally uses an asymmetric algorithm (RS256), meaning it signs 
 I took what I learned from reading PortSwigger and WorkOS and used a simple Python script template instead. By using basic programming blocks (`hmac` and `base64`), the script put the pieces of the token together step-by-step. I set the target email to `rsa_lord@juice-sh.op` and made sure the script stripped out any extra spaces so the format matched exactly what the Juice Shop backend database looks for.
 
 <details>
-<summary>🛠️ <b>View Copy-Pasteable Exploit Code</b></summary>
+<summary>🛠️ <b>View Code</b></summary>
 
 ```python
 import base64
