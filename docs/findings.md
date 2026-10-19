@@ -638,17 +638,17 @@ JSON Web Token (JWT) is a compact token used to transmit information between par
 During testing, I investigated how the application validates JSON Web Tokens (JWTs). I found that the application accepted a modified token that used the none (`"alg": "none"`) signing algorithm, which indicates that the token was not cryptographically signed.
 
 #### Hypothesis
-JSON Web Tokens use a cryptographic signature (like a wax seal on a letter) to prove they haven't been messed with. I guessed that if the website accepts tokens using the `none` algorithm, it means the server isn't enforcing that signature. If true, an attacker could change their user information inside the token to impersonate any user on the system without needing the server's secret key.
+JSON Web Tokens use a cryptographic signature to prove they haven't been messed with. I guessed that if the website accepts tokens using the `none` algorithm, it means the server isn't enforcing that signature. If true, an attacker could change their user information inside the token to impersonate any user on the system without needing the server's secret key.
 
 #### Validation
-I modified a JWT in the lab environment by changing its header to use the none algorithm and adjusting its payload. I removed the signature, leaving just the header and payload dots. 
+I modified a JWT in the lab environment by changing its header to use the none algorithm, updating the email claim to jwtn3d@juice-sh.op, and removing the signature.
 
 The server accepted the unsigned token without throwing an error and successfully triggered the Juice Shop challenge-success alert for the **JWT None Algorithm** challenge.
 
 #### Impact
-This is a high-severity issue because it completely breaks the website's security doors. If a web application trusts an unsigned token, an attacker can modify their token payload data—such as changing a user ID number or changing a role parameter from `"role": "customer"` to `"role": "admin"`. 
+Accepting unsigned JWTs can undermine authentication because the token's claims may be modified without a cryptographic signature to verify their integrity. Depending on how the application uses those claims, this weakness could allow impersonation or unauthorized access.
 
-Because the server fails to double-check the signature, the attacker can instantly log into anyone else's account or gain full administrative controls over the entire platform.
+In my test, I confirmed that the modified unsigned token completed the Juice Shop challenge.
 
 #### Result
 **Confirmed — The application fails to properly validate JWT signatures and accepts the insecure `none` algorithm.**
