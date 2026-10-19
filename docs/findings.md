@@ -564,25 +564,25 @@ Cryptographic failures occur when an application uses weak or inappropriate cryp
 * **Testing Approach:** White-box
 
 #### Observation
-While reviewing the application's backend code, I found that the website uses the **MD5** algorithm to scramble (hash) user passwords before saving them to the database. 
+While reviewing the application's backend source code, I found that user passwords are hashed using the MD5 algorithm before being stored.
 
-MD5 is an old, general-purpose mathematical formula meant for checking file integrity, not for locking up secrets. It runs way too fast, which makes it an unsafe choice for protecting passwords.
+MD5 is a fast, general-purpose cryptographic hash function. It is unsuitable for password storage because attackers can calculate large numbers of password guesses quickly if they obtain the stored hashes.
 
 #### Hypothesis
-If an attacker manages to break into the database and steal the stored password hashes, the use of MD5 will make it very easy for them to reverse-engineer those hashes and steal the users' actual plaintext passwords using offline guessing tools.
+If an attacker obtains the database containing password hashes, the use of MD5 may make it easier to guess users' passwords offline, particularly when passwords are weak or reused.
 
 #### Validation
 I checked the application's source code files and confirmed the weakness directly in the logic:
 
-- In `lib/insecurity.ts`, I found the exact function that tells Node.js to use `'md5'` to process text.
+- In `lib/insecurity.ts`, the hash function uses crypto.createHash('md5') to calculate a hash.
 - In `models/user.ts`, I verified that this weak MD5 function is actively triggered whenever a user creates an account or changes their password.
 
 Because the code itself explicitly shows MD5 being used, the vulnerability is fully confirmed. I did not need to crack an actual user's password to prove the system is structurally weak.
 
 #### Impact
-MD5 is fast to calculate and does not provide the password-specific protections offered by modern password-hashing algorithms. If an attacker obtains the stored password hashes, they can attempt to guess passwords offline and compare the resulting MD5 hashes.
+MD5 is fast to calculate and does not provide the password-specific protections provided by modern password-hashing algorithms. If an attacker obtains the stored password hashes, they can attempt to guess passwords offline and compare the resulting MD5 hashes.
 
-This could expose users to account compromise, particularly if they use weak or reused passwords. The practical impact depends on whether an attacker can obtain the hashes and how resistant the passwords are to guessing.
+This could lead to account compromise if passwords are successfully guessed, especially when users choose weak or reused passwords.
 
 #### Result
 **Confirmed — The application uses an outdated and weak algorithm (MD5) for password security.** 
@@ -618,7 +618,7 @@ password: {
 </details>
 
 #### Remediation
-- Replace MD5 with a modern, slow, password-specific algorithm like **bcrypt**, **scrypt**, or **Argon2id**. These are designed to be intentionally slow to stop high-speed computer guessing attacks.
+- Replace MD5 with password hashing algorithm like **bcrypt**, **scrypt**, or **Argon2id**. These are designed to be intentionally slow to stop high-speed computer guessing attacks.
 - Ensure the new library automatically adds a "salt" (a random string of extra characters) to each password before hashing it. This ensures that even if two users have the exact same password, their hashes will look completely different in the database.
 - Force a safe password migration. The next time a user successfully logs in, grab their password, hash it using the new secure method, and overwrite the old MD5 hash.
 
