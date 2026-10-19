@@ -352,21 +352,21 @@ Below is a visual timeline of verifying data exposure
 * **Testing Approach:** Black-box
 
 #### Observation
-While exploring the application's API endpoints using Burp Suite, I discovered that the `/rest/admin/application-configuration` address returned a large JSON response without requiring authentication. The response contained application settings, challenge-related configuration, social media links, a Google OAuth client ID, product data, and security-question-related information.
+While exploring the application's API endpoints using Burp Suite, I discovered that the `/rest/admin/application-configuration` address returned a large JSON response without requiring authentication. The response included application settings, challenge-related configuration, social media links, a Google OAuth client ID, product data, and security question related information.
 
 #### Hypothesis
-The endpoint may expose sensitive configuration or security-related information to unauthenticated users because appropriate access controls may not be enforced.
+The endpoint may expose sensitive configuration or security-related information because authentication and access controls may not be properly enforced.
 
 #### Validation
-I evaluated this issue by sending a direct `GET` request to the configuration endpoint using Burp Suite without attaching any active login tokens or cookies. The server responded with a `200 OK` status and returned a large file including security-question-related information.
+I evaluated this issue by sending a direct `GET` request to the configuration endpoint using Burp Suite without attaching any active login tokens or cookies. The server responded with a `200 OK` status and returned configuration data, including security questions related information.
 
 #### Impact
-Exposing sensitive configuration and security-related information may help an attacker understand the application's implementation and plan more targeted attacks. It gives them a map of how the application is built, what features are active, and how security questions are handled, making it much easier to plan more targeted attacks.
+Unauthenticated access to this endpoint exposes application configuration and security-related information that may help an attacker understand the application's functionality and identify areas for further investigation.
 
 #### Result
 **Confirmed — Unauthenticated access to application configuration.**
 
-The endpoint returned a large configuration response without requiring authentication.
+The endpoint returned configuration data, including security-question-related information, without requiring authentication.
 
 #### Evidence
 Below is a visual timeline of verifying the configuration exposure
