@@ -492,14 +492,14 @@ A direct request to this file was blocked with a message stating that only .md a
 The file-access validation may be bypassable by manipulating the requested filename, allowing a file with a disallowed extension to be retrieved.
 
 #### Validation
-First, I requested the normal URL `/ftp/package.json.bak`. The server blocked me and returned a `403 Forbidden` error. Next, I added a URL trick (`%2500.md`) to the end of the filename: `/ftp/package.json.bak%2500.md`.
+First, I requested the normal URL `/ftp/package.json.bak`. The server blocked me and returned a `403 Forbidden` error. I then modified the URL to /ftp/package.json.bak%2500.md.
 
 The file contained application general information about the application and its components. I did not identify credentials or other confirmed secrets in the exposed manifest.
 
 A null byte essentially tells the server's backend code "stop reading the filename right here". 
 
 #### Impact
-Exposing backup files is risky because it reveals the exact blueprint of the application's backend. By looking at the stolen file, an attacker can see the exact versions of the software libraries used and look up public databases (like CVEs) to see if any of these specific versions have unpatched, known security bugs that can be used to take over the server.
+The exposed backup manifest revealed the application's version, dependencies, and other technology-stack details. An attacker could use this information to research potential weaknesses in the listed components and plan further investigation.
 
 #### Result
 **Confirmed — The file checker was bypassed and a backup file was exposed.** 
