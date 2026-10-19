@@ -677,22 +677,20 @@ The following evidence demonstrates that the application accepted an unsigned JW
 
 ### Finding 11 — Forged Signed JWT (JWT algorithm confusion bypass) 
 * **Severity:** High
-* **Category:** Improper Authentication / Cryptographic Signature Bypass
+* **Category:** Improper Authentication / JWT Algorithm Confusion
 * **Affected Component:** JWT Authentication
 * **Affected Endpoint:** Authentication-protected API endpoints
 * **Testing Approach:** White-box 
 
 #### Observation
-I wanted to push myself on this finding because, at first sight, it seemed very complicated and out of my reach. I decided to study how the underlying code works rather than relying on automated tools. 
+I wanted to push myself on this finding because, at first sight, it seemed very complicated and out of my reach. I decided to study how the underlying code works.
 
-During my enumeration, I discovered a publicly accessible directory on the server containing the website's public cryptographic RSA key file at `/encryptionkeys/jwt.pub`. I wanted to see what would happen if I changed the token's algorithm to HS256 and used this discovered key file to sign a fake token.
+During my investigation, I found the application's public RSA key at /encryptionkeys/jwt.pub.. I wanted to see what would happen if I changed the token's algorithm to HS256 and used this discovered key file to sign a fake token.
 
 #### Hypothesis
-According to documentation from **PortSwigger Web Security Academy** and **WorkOS**, this weakness is known as **Algorithm Confusion**. 
+This behavior is known as JWT algorithm confusion. RS256 uses a private RSA key to sign tokens and the corresponding public key to verify them. HS256, by contrast, uses a shared secret to generate and verify an HMAC signature.
 
-The application normally uses RS256, which signs tokens with a private key and verifies them with a public key. However, if the application also accepts HS256 unexpectedly, it may treat the public key as a secret password for checking an HMAC signature.
-
-Because the public key is available to anyone, this could allow an attacker to create a token that passes signature verification without knowing the private key. I investigated whether this behavior was possible in the lab.
+If the application accepts HS256 unexpectedly and treats its RSA public key as an HMAC secret, an attacker who knows that public key may be able to create a forged token without knowing the private key.
 
 #### Validation
 I took what I learned from reading PortSwigger and WorkOS and used a simple Python script template instead. I reviewed the script's main components, including how the token was assembled and how the signature was generated using the public key. I then used the resulting token during testing in Burp Suite.
