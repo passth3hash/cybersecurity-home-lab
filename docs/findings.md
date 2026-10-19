@@ -308,10 +308,10 @@ If the endpoint does not enforce authentication and authorization, an unauthenti
 
 #### Validation
 I tested this vulnerability by sending a direct GET request to the /rest/memories/ endpoint using Burp Suite without including any login tokens or session cookies.
-The server responded with a 200 OK status and dumped a large list of user accounts containing private details. To verify it wasn't a fluke, I cleared my cookies and repeated the test in a completely fresh private browser window. The data still loaded, confirming that anyone can access this information without logging in.
+The server responded with a 200 OK status and dumped a large list of user accounts containing private details. To verify the finding, I repeated the test in a fresh private browser window with no existing session cookies. The endpoint returned the same sensitive data, confirming that authentication was not required to access it.
 
 #### Impact
-An attacker could easily download a list of all user accounts on the system. They could use the leaked email addresses for targeted phishing attacks or attempt to crack the exposed password hashes offline to take over accounts.
+An unauthenticated user could retrieve user records containing email addresses, usernames, password hashes, roles, and other account-related information. Exposed email addresses could be used in targeted phishing attempts, while password hashes could be targeted for offline password guessing.
 
 #### Result
 **Confirmed — Unauthenticated access to sensitive user data.**
