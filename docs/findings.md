@@ -19,7 +19,7 @@ Broken access control occurs when an application fails to enforce authorization 
 * **Category:** Broken Access Control 
 * **Affected component:** Shopping basket 
 * **Affected endpoint:** `GET /rest/basket/{id}` 
-* **Testing approach:** Black-box testing
+* **Testing approach:** Black-box 
 
 #### Observation 
 While testing the shopping basket feature, I noticed that the basket ID was included directly in the URL when the application requested basket information.
@@ -68,7 +68,7 @@ The follow-up request shows the exploit. Keeping the exact same login session, t
 
 
 
-### Finding 02 - Mass Data Exposure in Complaints endpoint
+### Finding 02 - Unauthorized Access to Other Users' Complaints
 * **Severity:** Medium 
 * **Category:** Broken Access Control  
 * **Affected endpoint:** `GET /api/Complaints` 
@@ -81,22 +81,24 @@ While testing the customer feedback features, I noticed that the application use
 The testing targeted a potential lack of server-side data filtering, causing it to return the entire database collection of customer complaints to any authenticated user.
 
 #### Validation 
-To verify this behavior, I performed three distinct tests:
+To verify this behavior, I performed three tests:
 
 - **User Account A (User ID 25):** I sent a request to `GET /api/Complaints/`. The server responded with `200 OK` and returned a list containing complaints submitted by multiple other accounts (including User ID 3).
-- **User Account B (User ID 26):** To ensure this wasn't an isolated glitch, I repeated the request using a completely separate user account. The server again returned all global complaints, including those from User ID 25.
+- **User Account B (User ID 26):** Repeating the request with a separate authenticated account also returned complaints belonging to other users, including User IDs 3 and 25.
 - **Unauthenticated Check:**  I attempted to access the endpoint without a login token. The application successfully blocked the request with a `401 Unauthorized` response.
 
-These results confirm that while the application checks *if* a user is logged in, it fails to check *who* is logged in before dumping the data.
+These results indicate that the endpoint enforces authentication but does not adequately restrict complaint records according to the requesting user's authorization.
 
 #### Impact
-Any registered user on the platform can view the feedback, private customer disputes, and personal accounts of all other users. Depending on what a customer writes in a complaint form (such as tracking numbers, names, or order details), this flaw results in an unauthorized leak of private data.
+An authenticated user may be able to view complaints submitted by other users without permission. Depending on the information included in individual complaints, this could expose private customer feedback or personal and order-related details. This creates a privacy risk and could undermine user trust.
+
+The testing confirmed cross-user complaint access. It did not establish that every complaint contains sensitive personal information.
 
 #### Result
-**Confirmed — Authenticated mass data exposure of customer complaints.**
+**Confirmed — Authenticated users can access complaint records belonging to other users through the complaints collection endpoint.**
 
 #### Evidence 
-The visual proof confirming this mass data exposure is documented below:
+The screenshots below document the responses from both authenticated test accounts and the unauthenticated request.
 
 First test account (User ID 25) - The initial test demonstrates that an authenticated user account receives a complete list of complaints submitted by multiple other global users.
 
@@ -128,7 +130,7 @@ Unauthenticated Request Check - The final test proves that while the system lack
 </details>
 
 #### Remediation
-- Return only the complaints the user is authorized to view.
+- Return only the complaints the requesting user is permitted to view.
 - If complaint listings are intended for administrators, implement strict Role-Based Access Control (RBAC) on the server to ensure only accounts with verified administrator privileges can access the `/api/Complaints/` path.
 
 
