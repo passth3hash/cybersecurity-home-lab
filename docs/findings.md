@@ -19,24 +19,24 @@ Broken access control occurs when an application fails to enforce authorization 
 * **Category:** Broken Access Control 
 * **Affected component:** Shopping basket 
 * **Affected endpoint:** `GET /rest/basket/{id}` 
-* **Testing approach:** Black-box 
+* **Testing approach:** Black-box testing
 
 #### Observation 
-While testing the shopping basket feature, I noticed that the basket's unique ID number was visible directly in the URL when the application requested basket information.
+While testing the shopping basket feature, I noticed that the basket ID was included directly in the URL when the application requested basket information.
 
 #### Hypothesis 
-I suspected that the application was trusting the ID number provided in the URL blindly, without verifying if the basket actually belonged to the logged-in user.
+I suspected that the server might not verify whether the requested basket belonged to the currently authenticated user. If ownership was not checked, changing the basket ID could allow access to another user's basket.
 
 #### Validation 
-To test this, I logged in as a regular user **(User ID 25, assigned to Basket ID 6)** and captured the traffic in Burp. I then performed the following tests using the exact same login session:
+To test this, I logged in as a regular user **(User ID 25, assigned to Basket ID 6)** and captured the requests in Burp Suite. I then performed the following tests using the exact same login session:
 
-- GET /rest/basket/6 successfuly returned my own basket data.
-- GET /rest/basket/1 **successfuly returned the basket data belonging to User ID 1**
+- GET /rest/basket/6 returned my own basket data successfully.
+- GET /rest/basket/1 returned basket data belonging to User ID 1.
 
 The application did not require a change of user accounts or a different authorization token to view User 1's data.
 
 #### Impact 
-Any logged-in user can access the shopping activity and product selections of any customer simply by guessing or cycling through basket ID numbers. In a real world e-commerce application, exposing a customer's intent to buy violates data privacy regulations and damages customer trust. 
+An authenticated user could potentially access other customers' basket contents by changing the basket ID in the request. Depending on the information stored in a basket, this could expose product selections and shopping activity, creating privacy concerns and reducing customer trust.
 
 #### Result 
 **Confirmed - unauthorized cross-user basket access.**
