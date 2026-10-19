@@ -412,7 +412,7 @@ While testing how the website handles discount codes at checkout, I found that I
 The application returned a successful response indicating a 99% discount, and the checkout order summary later showed the discounted price.
 
 #### Hypothesis
-The application creates its discount codes using a predictable format. Because the backend server does not double-check if the discount code was actually made by an administrator, a user can easily change the numbers inside the code to invent their own discount amount.
+The application creates its discount codes using a predictable format. Because the backend server does not double-check if the discount code was actually made by an administrator, a user can easily change the numbers inside the code to create their own discount amount.
 
 #### Validation
 I inspected the coupon-generation and validation logic and found that coupon values were encoded using Z85. 
@@ -424,7 +424,9 @@ To validate the issue, I generated a coupon representing a 99% discount using a 
 I then verified the business impact through the checkout flow. The order summary showed a product priced at €3.49, a promotion of €3.46, and a final total of €0.03, consistent with a 99% discount.
 
 #### Impact
-An attacker could use this trick to buy any product in the store for virtually free, causing massive financial loss for a real business. 
+A user could forge a coupon to obtain a discount that was not authorized by the application. In my test, I successfully applied a 99% discount to a product priced at €3.49, reducing the final price to €0.03.
+
+In a real-world application, this weakness could lead to financial losses if attackers used forged coupons to purchase products at unauthorized prices. The extent of the impact would depend on which products, discounts, and checkout operations were affected.
 
 #### Result
 **Confirmed — Forged coupon accepted with a 99% discount.**
