@@ -213,12 +213,12 @@ The final test documents the successful injection payload passing through, gener
 * **Category:** Injection — Cross-Site Scripting (DOM-Based XSS)
 * **Affected Component:** Search Page
 * **Affected Location:** `/#/search?q=` 
-* **Testing Approach:** Gray-box (Black-box and source code review)
+* **Testing Approach:** Grey-box
 
 #### Observation
-During black-box testing, the application search page interpreted HTML text supplied directly through the query parameter rather than rendering it as safe, literal plain text.
+During black-box testing, I found that the search page interpreted HTML supplied through the URL's query parameter instead of displaying it strictly as plain text. For example, entering a basic HTML tag caused the text to render in bold.
 
-Initial input of a basic HTML structural tag (`<b>XSS-LAB-002</b>`) resulted in the application rendering the string in **bold**. Subsequent validation confirmed that client-side script execution context could be achieved through this vector.
+Further testing showed that user-controlled input could also trigger JavaScript execution in the browser.
 
 #### Hypothesis
 The search page may be inserting user-controlled input into the page in a way that allows HTML injection and JavaScript execution.
@@ -238,7 +238,7 @@ After seeing this, I checked the website's source code and found the problem on 
 This code uses `[innerHTML]`, which tells the website to trust whatever the user types as real HTML. Since the payload runs completely in the browser and does not show up in the backend Burp Suite logs, this confirms it is a DOM-based XSS vulnerability.
 
 #### Impact
-An attacker could build a special link containing this payload and trick another user into clicking it. If the victim clicks the link, the attacker's script will run inside their browser session. Depending on the user's account privileges, this could allow the attacker to interact with the app as if they were that user or view sensitive information on the screen.
+An attacker could build a special link and persuade another user into clicking it. If the victim clicks the link, the attacker's script will run inside their browser session. Depending on the user's account privileges, this could allow the attacker to interact with the app as if they were that user or view sensitive information on the screen.
 
 #### Result
 **Confirmed — DOM-based XSS.**
