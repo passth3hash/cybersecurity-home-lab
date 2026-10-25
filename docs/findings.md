@@ -238,7 +238,7 @@ After seeing this, I checked the website's source code and found the problem on 
 This code uses `[innerHTML]`, which tells the website to trust whatever the user types as real HTML. Since the payload runs completely in the browser and does not show up in the backend Burp Suite logs, this confirms it is a DOM-based XSS vulnerability.
 
 #### Impact
-An attacker could build a special link and persuade another user into clicking it. If the victim clicks the link, the attacker's script will run inside their browser session. Depending on the user's account privileges, this could allow the attacker to interact with the app as if they were that user or view sensitive information on the screen.
+An attacker could build a special link and persuade another user into clicking it. If the victim clicks the link, the attacker's script will run inside their browser session. Depending on the user's account privileges, this could allow the attacker to interact with the app as if they were that user and view sensitive information.
 
 #### Result
 **Confirmed — DOM-based XSS.**
